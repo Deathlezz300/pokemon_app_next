@@ -10,6 +10,7 @@ import { existInFavorites, ontToogleFavorite } from "@/utils/localFavorites";
 import { useState } from "react";
 import confetti from 'canvas-confetti';
 import { getPokemonInfo } from "@/utils/getPokemonInfo";
+import { redirect } from "next/dist/server/api-utils";
 
 interface props{
     pokemon:PokemonResponse
@@ -85,6 +86,11 @@ const PokemonPage:NextPage<props>=({pokemon})=>{
 //dinamica, el getStathicPats se encarga de generar las x paginas
 //con los x parametros que le pasemos
 
+//Con el fall blocking lo que hace es que si se pasa un parametro
+//no definido el lo deja pasar al getStaticProps, y luego se hace un
+//try-catch en la peticion de la data, si hay error se retorna null, en caso contrario
+//el valor, si el valor existe next creará la pagina en el fylesistem y lo guardará
+//para futuras peticiones
 export const getStaticPaths: GetStaticPaths = async (ctx) => {
     
     //Aqui podriamos hacer una peticion con todos los ids de los productos
@@ -96,21 +102,35 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
                 params:{id:ind}
             }
         }) ,
-        fallback: false
+        fallback: 'blocking'
     }
 }
 
 //Cuando llegamos aca ya tenemos los parametros o props por medio del contexto
 //y podemos hacer la peticion de nuestros datos del parametro x
+//Con la propieda revalidate es que cada x segundos va a volver
+//a actualizar los filesystems de las paginas generadas de forma estatica
+
 export const getStaticProps: GetStaticProps = async ({params}) => {
     
     const {id}=params as {id:string};
 
+    const pokemon=await getPokemonInfo(id);
+
+    if(!pokemon){
+        return {
+            redirect:{
+                destination:'/',
+                permanent:false
+            }
+        }
+    }
 
     return {
         props: {
-            pokemon:await getPokemonInfo(id)
-        }
+            pokemon
+        },
+        revalidate:86400
     }
 }
 

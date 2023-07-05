@@ -18,7 +18,7 @@ const FavoritePage=()=>{
     },[])
 
     const onClickPokemon=(pokemon:PokemonResponse)=>{
-        router.push(`/name/${pokemon.name}`);
+        router.push(`/pokemon/${pokemon.id}`);
     }
 
     return(
